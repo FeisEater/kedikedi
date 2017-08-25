@@ -23,14 +23,13 @@ public class Remote {
 		try {dataOut.close();} catch(IOException ignore) {}
 	}
 	
-	public void doSomething() {
-		//try {
-		//	dataOut.writeUTF("doing something");
-		//	dataOut.flush();
-			System.out.println("Sent stuff");
-		//} catch (IOException e) {
-		// TODO Auto-generated catch block
-		//	e.printStackTrace();
-		//}
+	public void sendMsg(String msg) {
+		try {
+			dataOut.writeUTF(msg);
+			dataOut.flush();
+			System.out.println("Sent: " + msg);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }
