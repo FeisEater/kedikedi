@@ -3,6 +3,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import lejos.nxt.LCD;
+import lejos.nxt.LightSensor;
 import lejos.nxt.Motor;
 import lejos.nxt.SensorPort;
 import lejos.nxt.Sound;
@@ -27,7 +28,7 @@ public class Main {
 	static UltrasonicSensor ultra;
 	static DifferentialPilot pilot;
 	public static void main (String[] args) {
-		LCD.clear();
+ 		LCD.clear();
 		LCD.drawString("Waiting", 0, 0);
 		connection = Bluetooth.waitForConnection(); // this method is very patient. 
 		LCD.clear();
@@ -38,92 +39,69 @@ public class Main {
 		recv.setDaemon(true);
 		recv.start();
 		Sound.beepSequence();
-		pilot = new DifferentialPilot(2.1f, 4.4f, Motor.A, Motor.B);
+		pilot = new DifferentialPilot(5.5f, 10.5f, Motor.A, Motor.B);
 		Motor.A.setSpeed(0);
 		Motor.B.setSpeed(0);
 		ultra = new UltrasonicSensor(SensorPort.S1);
 		TouchSensor touch = new TouchSensor(SensorPort.S2);
-		int leftSpeed = 0;
-		int rightSpeed = 0;
-		boolean leftForward = true;
-		boolean rightForward = true;
+		TouchSensor touch2 = new TouchSensor(SensorPort.S3);
+		LightSensor lightLeft = new LightSensor(SensorPort.S4);
+		LightSensor lightRight = new LightSensor(SensorPort.S3);
 		long zigzagTime = 0;
 		boolean arcRight = true;
+		float oldLeft = 0;
+		float oldRight = 0;
 		while (running) {
 			if (spinnyMode) {
-				if (ultra.getDistance() <= 27 || touch.isPressed()) {
-					Motor.A.setSpeed(scanningTurnSpeed);
-					Motor.B.setSpeed(scanningTurnSpeed);
+				if (ultra.getDistance() <= 27 || touch.isPressed() || touch2.isPressed()) {
+					Motor.A.setSpeed(fullSpeed);
+					Motor.B.setSpeed(turnSpeed);
 					Motor.A.backward();
-					Motor.B.forward();
+					Motor.B.backward();
 					zigzagTime = System.currentTimeMillis() + 500;
-					arcRight = true;
+					arcRight = false;
 				} else {
 					if (System.currentTimeMillis() > zigzagTime) {
 						arcRight = !arcRight;
 						zigzagTime = System.currentTimeMillis() + 500;
 					}
-					System.out.println(arcRight);
 					Motor.A.setSpeed(arcRight ? fullSpeed : turnSpeed);
 					Motor.B.setSpeed(arcRight ? turnSpeed : fullSpeed);
 					Motor.A.forward();
 					Motor.B.forward();
 				}
 			} else if (!mazeMode) {
-				if (forward == 1) {
-					if (right == 1) {
-						leftSpeed = fullSpeed;
-						rightSpeed = turnSpeed;
-						leftForward = true;
-						rightForward = true;
-					} else if (right == -1) {
-						leftSpeed = turnSpeed;
-						rightSpeed = fullSpeed;
-						leftForward = true;
-						rightForward = true;
-					} else {
-						leftSpeed = fullSpeed;
-						rightSpeed = fullSpeed;
-						leftForward = true;
-						rightForward = true;
-					}
-				} else if (forward == -1) {
-					if (right == 1) {
-						leftSpeed = -fullSpeed;
-						rightSpeed = -turnSpeed;
-						leftForward = false;
-						rightForward = false;
-					} else if (right == -1) {
-						leftSpeed = -turnSpeed;
-						rightSpeed = -fullSpeed;
-						leftForward = false;
-						rightForward = false;
-					} else {
-						leftSpeed = -fullSpeed;
-						rightSpeed = -fullSpeed;
-						leftForward = false;
-						rightForward = false;
-					}
-				} else {
-					if (right == 1) {
-						leftSpeed = staticTurnSpeed;
-						rightSpeed = -staticTurnSpeed;
-						leftForward = true;
-						rightForward = false;
-					} else if (right == -1) {
-						leftSpeed = -staticTurnSpeed;
-						rightSpeed = staticTurnSpeed;
-						leftForward = false;
-						rightForward = true;
-					} else {
-						leftSpeed = 0;
-						rightSpeed = 0;
-					}
+			} else {
+				int ll = lightLeft.readValue();
+				int rl = lightRight.readValue();
+				int pos = ll-rl;
+				System.out.println(pos);
+
+				int tspd = -30;
+				int rspd = 0;
+
+				if (pos>12)
+					rspd=-40;
+				else if (pos>8)
+					rspd = -20;
+				if (pos<-12)
+					rspd = 40;
+				else if (pos<-8)
+					rspd = 20;
+
+				float right = (tspd+rspd)/2f;
+				float left = tspd-right;
+				
+				if (Math.abs(oldLeft - left * 15f) > 1) {
+					Motor.A.setSpeed(left * 15f);
+					if (left > 0) Motor.A.forward(); else Motor.A.backward();
 				}
-				Motor.A.setSpeed(leftSpeed);
-				Motor.B.setSpeed(rightSpeed);
-				if (leftForward) Motor.A.backward(); else Motor.A.forward();
-				if (rightForward) Motor.B.backward(); else Motor.B.forward();
+				if (Math.abs(oldRight - right * 15f) > 1) {
+					Motor.B.setSpeed(right * 15f);					
+					if (right > 0) Motor.B.forward(); else Motor.B.backward();
+				}
+				oldLeft = left * 30f;
+				oldRight = right * 30f;
 			}
 		}
 	}
@@ -143,44 +121,113 @@ public class Main {
 		if (forward >= 1) forward = 1;
 		else if (forward <= -1) forward = -1;
 		if (right >= 1)	right = 1;
-		else if (right <= -1)	right = -1;		
+		else if (right <= -1)	right = -1;
+		
+		int leftSpeed = 0;
+		int rightSpeed = 0;
+		boolean leftForward = true;
+		boolean rightForward = true;
+
+		if (forward == 1) {
+			if (right == 1) {
+				leftSpeed = fullSpeed;
+				rightSpeed = turnSpeed;
+				leftForward = true;
+				rightForward = true;
+			} else if (right == -1) {
+				leftSpeed = turnSpeed;
+				rightSpeed = fullSpeed;
+				leftForward = true;
+				rightForward = true;
+			} else {
+				leftSpeed = fullSpeed;
+				rightSpeed = fullSpeed;
+				leftForward = true;
+				rightForward = true;
+			}
+		} else if (forward == -1) {
+			if (right == 1) {
+				leftSpeed = -fullSpeed;
+				rightSpeed = -turnSpeed;
+				leftForward = false;
+				rightForward = false;
+			} else if (right == -1) {
+				leftSpeed = -turnSpeed;
+				rightSpeed = -fullSpeed;
+				leftForward = false;
+				rightForward = false;
+			} else {
+				leftSpeed = -fullSpeed;
+				rightSpeed = -fullSpeed;
+				leftForward = false;
+				rightForward = false;
+			}
+		} else {
+			if (right == 1) {
+				leftSpeed = staticTurnSpeed;
+				rightSpeed = -staticTurnSpeed;
+				leftForward = true;
+				rightForward = false;
+			} else if (right == -1) {
+				leftSpeed = -staticTurnSpeed;
+				rightSpeed = staticTurnSpeed;
+				leftForward = false;
+				rightForward = true;
+			} else {
+				leftSpeed = 0;
+				rightSpeed = 0;
+			}
+		}
+		Motor.A.setSpeed(leftSpeed);
+		Motor.B.setSpeed(rightSpeed);
+		if (leftForward) Motor.A.backward(); else Motor.A.forward();
+		if (rightForward) Motor.B.backward(); else Motor.B.forward();
 	}
 	
-	public static void doMaze() {
+	/*public static void doMaze() {
 		System.out.println("doing maze");
-		int angle = 80;
+		int angle = 93;
 		pilot.setRotateSpeed(angle);
-		pilot.setTravelSpeed(4.4f);
+		pilot.setTravelSpeed(20);
 		Motor.A.setSpeed(fullSpeed);
 		Motor.B.setSpeed(fullSpeed);
-		while (ultra.getRange() > 8) {
+		while (ultra.getRange() > 15) {
 			Motor.A.forward();
 			Motor.B.forward();
 		}
 		pilot.rotate(-angle);
-		while (ultra.getRange() > 8) {
+		Motor.A.setSpeed(fullSpeed);
+		Motor.B.setSpeed(fullSpeed);
+		while (ultra.getRange() > 15) {
 			Motor.A.forward();
 			Motor.B.forward();
 		}
 		pilot.rotate(angle);
-		while (ultra.getRange() > 8) {
+		Motor.A.setSpeed(fullSpeed);
+		Motor.B.setSpeed(fullSpeed);
+		while (ultra.getRange() > 15) {
 			Motor.A.forward();
 			Motor.B.forward();
 		}
 		pilot.rotate(angle);
-		while (ultra.getRange() > 8) {
+		Motor.A.setSpeed(fullSpeed);
+		Motor.B.setSpeed(fullSpeed);
+		while (ultra.getRange() > 15) {
 			Motor.A.forward();
 			Motor.B.forward();
 		}
 		pilot.rotate(-angle);
-		while (ultra.getRange() > 8) {
+		Motor.A.setSpeed(fullSpeed);
+		Motor.B.setSpeed(fullSpeed);
+		while (ultra.getRange() > 15) {
 			Motor.A.forward();
 			Motor.B.forward();
 		}
 		pilot.rotate(-angle);
-		pilot.travel(25);
+		pilot.travel(40);
 		pilot.rotate(angle);
-		pilot.travel(100);
+		pilot.travel(150);
 		mazeMode = false;
-	}
+	}*/
+	
 }

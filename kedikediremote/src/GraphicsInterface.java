@@ -100,6 +100,8 @@ public class GraphicsInterface extends JPanel implements Runnable {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				remote.sendMsg("mode_maze");
+				isSpinnyMode = true;
+				spinnyModeButton.setText("Go to RC mode");
 			}
 	    }
 

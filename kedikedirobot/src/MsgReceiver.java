@@ -46,12 +46,13 @@ public class MsgReceiver extends Thread {
 						break;
 					case "mode_rc":
 						Main.spinnyMode = false;
+						Main.mazeMode = false;
 						Motor.A.stop(true);
 						Motor.B.stop(true);
 						break;
 					case "mode_maze":
 						Main.mazeMode = true;
-						Main.doMaze();
+						//Main.doMaze();
 					default:
 						if (received.startsWith("speeds")) {
 							String parse = received.substring(7);
