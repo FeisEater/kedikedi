@@ -24,6 +24,14 @@ public class Remote {
 	}
 	
 	public void sendMsg(String msg) {
+		if (msg.startsWith("speeds")) {
+			String parse = msg.substring(7);
+			System.out.println(Integer.parseInt(parse.substring(0, parse.indexOf(" "))));
+			parse = parse.substring(parse.indexOf(" ")+1);
+			System.out.println(Integer.parseInt(parse.substring(0, parse.indexOf(" "))));
+			parse = parse.substring(parse.indexOf(" ")+1);
+			System.out.println(Integer.parseInt(parse));
+		}
 		try {
 			dataOut.writeUTF(msg);
 			dataOut.flush();

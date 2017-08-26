@@ -10,8 +10,8 @@ import lejos.nxt.comm.Bluetooth;
 import lejos.robotics.navigation.DifferentialPilot;
 
 public class Main {
-	static int fullSpeed = 540;
-	static int turnSpeed = 90;
+	static int fullSpeed = 720;
+	static int turnSpeed = 180;
 	static int staticTurnSpeed = 360;
 
 	public static void main (String[] args) {
@@ -59,6 +59,14 @@ public class Main {
 						setMovement(0,-1);
 						break;
 					default:
+						if (received.startsWith("speeds")) {
+							String parse = received.substring(7);
+							fullSpeed = Integer.parseInt(parse.substring(0, parse.indexOf(" ")));
+							parse = parse.substring(parse.indexOf(" ") + 1);
+							turnSpeed = Integer.parseInt(parse.substring(0, parse.indexOf(" ")));
+							parse = parse.substring(parse.indexOf(" ") + 1);
+							staticTurnSpeed = Integer.parseInt(parse);
+						}
 						break;
 				}
 				int leftSpeed = 0;

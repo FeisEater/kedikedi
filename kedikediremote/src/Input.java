@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.JTextField;
+
 public class Input implements KeyEventDispatcher {
 	private Remote remote;
 	public Input(Remote remote) {
@@ -13,6 +15,7 @@ public class Input implements KeyEventDispatcher {
                 KeyboardFocusManager.getCurrentKeyboardFocusManager();
 		manager.addKeyEventDispatcher(this);
 		this.remote = remote;
+		
 	}
 	
 	private Set<Integer> keys = new HashSet<>();
