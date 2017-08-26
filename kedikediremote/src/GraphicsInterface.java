@@ -18,6 +18,7 @@ public class GraphicsInterface extends JPanel implements Runnable {
 	    private JTextField staticTurnSpeed = new JTextField("360", 4);
 	    private JButton speedButton = new JButton("Change speed");
 	    private JButton spinnyModeButton = new JButton("Go to Spinny challenge mode");
+	    private JButton mazeModeButton = new JButton("Do maze");
 	    private Remote remote;
 	    private boolean isSpinnyMode = false;
     /**
@@ -42,6 +43,8 @@ public class GraphicsInterface extends JPanel implements Runnable {
 	        speedButton.addActionListener(new SpeedButtonListener());
 	        add(spinnyModeButton);
 	        spinnyModeButton.addActionListener(new SpinnyModeButtonListener());
+	        add(mazeModeButton);
+	        mazeModeButton.addActionListener(new MazeModeButtonListener());
 	        setFocusable(true);
 	    }
 	/**
@@ -91,6 +94,12 @@ public class GraphicsInterface extends JPanel implements Runnable {
 					isSpinnyMode = false;
 					spinnyModeButton.setText("Go to Spinny challenge mode");
 				}
+			}
+	    }
+	    private class MazeModeButtonListener implements ActionListener {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				remote.sendMsg("mode_maze");
 			}
 	    }
 

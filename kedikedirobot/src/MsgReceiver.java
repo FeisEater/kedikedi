@@ -41,16 +41,17 @@ public class MsgReceiver extends Thread {
 						Main.spinnyMode = true;
 						Motor.A.resetTachoCount();
 						Motor.B.resetTachoCount();
-						Main.spinnyTravel = 0;
 						Motor.A.stop(true);
 						Motor.B.stop(true);
 						break;
 					case "mode_rc":
-						System.out.println("disable");
 						Main.spinnyMode = false;
 						Motor.A.stop(true);
 						Motor.B.stop(true);
 						break;
+					case "mode_maze":
+						Main.mazeMode = true;
+						Main.doMaze();
 					default:
 						if (received.startsWith("speeds")) {
 							String parse = received.substring(7);

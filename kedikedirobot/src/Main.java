@@ -16,12 +16,16 @@ public class Main {
 	public static int fullSpeed = 720;
 	public static int turnSpeed = 180;
 	public static int staticTurnSpeed = 360;
+	public static int scanningTurnSpeed = 60;
 	public static BTConnection connection;
 	public static DataInputStream dataIn;
 	public static DataOutputStream dataOut;
 	public static boolean spinnyMode = false;
+	public static boolean mazeMode = false;
 	public static boolean running = true;
-	public static int spinnyTravel = 0;
+	public static long zigzagTimer = 0;
+	static UltrasonicSensor ultra;
+	static DifferentialPilot pilot;
 	public static void main (String[] args) {
 		LCD.clear();
 		LCD.drawString("Waiting", 0, 0);
@@ -34,41 +38,38 @@ public class Main {
 		recv.setDaemon(true);
 		recv.start();
 		Sound.beepSequence();
-		DifferentialPilot pilot = new DifferentialPilot(2.1f, 4.4f, Motor.A, Motor.B);
+		pilot = new DifferentialPilot(2.1f, 4.4f, Motor.A, Motor.B);
 		Motor.A.setSpeed(0);
 		Motor.B.setSpeed(0);
-		UltrasonicSensor ultra = new UltrasonicSensor(SensorPort.S1);
+		ultra = new UltrasonicSensor(SensorPort.S1);
 		TouchSensor touch = new TouchSensor(SensorPort.S2);
 		int leftSpeed = 0;
 		int rightSpeed = 0;
 		boolean leftForward = true;
 		boolean rightForward = true;
-		long turnTiming = 0;
+		long zigzagTime = 0;
+		boolean arcRight = true;
 		while (running) {
 			if (spinnyMode) {
-				boolean turnRight = false;
-				if (Motor.A.getTachoCount() > 1800)
-					turnRight = true;
-				//if (ultra.getDistance() <= 45 || touch.isPressed()) {
-				//	turnTiming = System.currentTimeMillis() + 500;
-				//}
-				if (ultra.getDistance() <= 30 || touch.isPressed()/* || System.currentTimeMillis() < turnTiming*/) {
-					if (turnRight) {
-						Motor.A.stop();
-						Motor.B.stop();
-						//Motor.A.backward();
-						//Motor.B.forward();
-					} else {
-						Motor.A.forward();
-						Motor.B.backward();
-					}
-				} else {
-					Motor.A.setSpeed(fullSpeed * 2 / 3);
-					Motor.B.setSpeed(fullSpeed * 2 / 3);
+				if (ultra.getDistance() <= 27 || touch.isPressed()) {
+					Motor.A.setSpeed(scanningTurnSpeed);
+					Motor.B.setSpeed(scanningTurnSpeed);
 					Motor.A.backward();
-					Motor.B.backward();
+					Motor.B.forward();
+					zigzagTime = System.currentTimeMillis() + 500;
+					arcRight = true;
+				} else {
+					if (System.currentTimeMillis() > zigzagTime) {
+						arcRight = !arcRight;
+						zigzagTime = System.currentTimeMillis() + 500;
+					}
+					System.out.println(arcRight);
+					Motor.A.setSpeed(arcRight ? fullSpeed : turnSpeed);
+					Motor.B.setSpeed(arcRight ? turnSpeed : fullSpeed);
+					Motor.A.forward();
+					Motor.B.forward();
 				}
-			} else {
+			} else if (!mazeMode) {
 				if (forward == 1) {
 					if (right == 1) {
 						leftSpeed = fullSpeed;
@@ -145,4 +146,41 @@ public class Main {
 		else if (right <= -1)	right = -1;		
 	}
 	
+	public static void doMaze() {
+		System.out.println("doing maze");
+		int angle = 80;
+		pilot.setRotateSpeed(angle);
+		pilot.setTravelSpeed(4.4f);
+		Motor.A.setSpeed(fullSpeed);
+		Motor.B.setSpeed(fullSpeed);
+		while (ultra.getRange() > 8) {
+			Motor.A.forward();
+			Motor.B.forward();
+		}
+		pilot.rotate(-angle);
+		while (ultra.getRange() > 8) {
+			Motor.A.forward();
+			Motor.B.forward();
+		}
+		pilot.rotate(angle);
+		while (ultra.getRange() > 8) {
+			Motor.A.forward();
+			Motor.B.forward();
+		}
+		pilot.rotate(angle);
+		while (ultra.getRange() > 8) {
+			Motor.A.forward();
+			Motor.B.forward();
+		}
+		pilot.rotate(-angle);
+		while (ultra.getRange() > 8) {
+			Motor.A.forward();
+			Motor.B.forward();
+		}
+		pilot.rotate(-angle);
+		pilot.travel(25);
+		pilot.rotate(angle);
+		pilot.travel(100);
+		mazeMode = false;
+	}
 }
