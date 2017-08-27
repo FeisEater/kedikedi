@@ -2,6 +2,7 @@ import java.io.IOException;
 
 import lejos.nxt.Motor;
 
+//Another thread for message receiving. Messages are ordinary strings.
 public class MsgReceiver extends Thread {
 	public MsgReceiver() {
 	}
@@ -39,8 +40,6 @@ public class MsgReceiver extends Thread {
 						break;
 					case "mode_spinny":
 						Main.spinnyMode = true;
-						Motor.A.resetTachoCount();
-						Motor.B.resetTachoCount();
 						Motor.A.stop(true);
 						Motor.B.stop(true);
 						break;

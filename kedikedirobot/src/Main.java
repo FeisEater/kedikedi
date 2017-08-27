@@ -14,16 +14,24 @@ import lejos.nxt.comm.Bluetooth;
 import lejos.robotics.navigation.DifferentialPilot;
 
 public class Main {
+	//Speed of wheel for full rotation
 	public static int fullSpeed = 720;
+	//Speed of wheel of arcing motion
 	public static int turnSpeed = 180;
+	//Speed of wheel when turning in place
 	public static int staticTurnSpeed = 360;
+	//Not used
 	public static int scanningTurnSpeed = 60;
 	public static BTConnection connection;
 	public static DataInputStream dataIn;
 	public static DataOutputStream dataOut;
+	//Movement mode for forest
 	public static boolean spinnyMode = false;
+	//Movement mode for maze
 	public static boolean mazeMode = false;
+	//When false, program terminates
 	public static boolean running = true;
+	// Timing zig zag while moving in forest
 	public static long zigzagTimer = 0;
 	static UltrasonicSensor ultra;
 	static DifferentialPilot pilot;
@@ -43,24 +51,42 @@ public class Main {
 		Motor.A.setSpeed(0);
 		Motor.B.setSpeed(0);
 		ultra = new UltrasonicSensor(SensorPort.S1);
-		TouchSensor touch = new TouchSensor(SensorPort.S2);
-		TouchSensor touch2 = new TouchSensor(SensorPort.S3);
+		TouchSensor touchLeft = new TouchSensor(SensorPort.S2);
+		TouchSensor touchRight = new TouchSensor(SensorPort.S3);
 		LightSensor lightLeft = new LightSensor(SensorPort.S4);
 		LightSensor lightRight = new LightSensor(SensorPort.S3);
 		long zigzagTime = 0;
 		boolean arcRight = true;
 		float oldLeft = 0;
 		float oldRight = 0;
+		long backupTimer = 0;
+		boolean backingUp = false;
+		
 		while (running) {
+			// forest mode
 			if (spinnyMode) {
-				if (ultra.getDistance() <= 27 || touch.isPressed() || touch2.isPressed()) {
+				//if touched set timer and backup
+				if (touchLeft.isPressed() || touchRight.isPressed()) {
+					backupTimer = System.currentTimeMillis() + 250;
+					backingUp = true;
+				}
+				//Backup to different direction based on which touch sensor was pushed
+				if (touchLeft.isPressed() || ultra.getDistance() <= 27) {
 					Motor.A.setSpeed(fullSpeed);
 					Motor.B.setSpeed(turnSpeed);
+				} else if (touchRight.isPressed()) {
+					Motor.A.setSpeed(turnSpeed);
+					Motor.B.setSpeed(fullSpeed);					
+				}
+				//If backuptimer or ultrasound too close, backup
+				if (System.currentTimeMillis() < backupTimer || ultra.getDistance() <= 27) {
 					Motor.A.backward();
 					Motor.B.backward();
 					zigzagTime = System.currentTimeMillis() + 500;
 					arcRight = false;
 				} else {
+					//Move zigzagging to increase fov of ultrasensor
+					backingUp = false;
 					if (System.currentTimeMillis() > zigzagTime) {
 						arcRight = !arcRight;
 						zigzagTime = System.currentTimeMillis() + 500;
@@ -72,10 +98,10 @@ public class Main {
 				}
 			} else if (!mazeMode) {
 			} else {
+				//Maze mode. If light value from two sensors is different, turn
 				int ll = lightLeft.readValue();
 				int rl = lightRight.readValue();
 				int pos = ll-rl;
-				System.out.println(pos);
 
 				int tspd = -30;
 				int rspd = 0;
@@ -92,16 +118,10 @@ public class Main {
 				float right = (tspd+rspd)/2f;
 				float left = tspd-right;
 				
-				if (Math.abs(oldLeft - left * 15f) > 1) {
-					Motor.A.setSpeed(left * 15f);
-					if (left > 0) Motor.A.forward(); else Motor.A.backward();
-				}
-				if (Math.abs(oldRight - right * 15f) > 1) {
-					Motor.B.setSpeed(right * 15f);					
-					if (right > 0) Motor.B.forward(); else Motor.B.backward();
-				}
-				oldLeft = left * 30f;
-				oldRight = right * 30f;
+				Motor.A.setSpeed(left * 15f);
+				if (left > 0) Motor.A.forward(); else Motor.A.backward();
+				Motor.B.setSpeed(right * 15f);					
+				if (right > 0) Motor.B.forward(); else Motor.B.backward();
 			}
 		}
 	}
@@ -115,6 +135,7 @@ public class Main {
 	
 	static int forward = 0;
 	static int right = 0;
+	//fdir: 1 forward, 0 none, -1 backward. rdir: 1 right, 0 none, -1 left
 	public static void setMovement(int fdir, int rdir) {
 		forward += fdir;
 		right += rdir;

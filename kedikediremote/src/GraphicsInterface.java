@@ -17,10 +17,12 @@ public class GraphicsInterface extends JPanel implements Runnable {
 	    private JTextField turnSpeed = new JTextField("90", 4);
 	    private JTextField staticTurnSpeed = new JTextField("360", 4);
 	    private JButton speedButton = new JButton("Change speed");
+	    private JButton prepareForForestButton = new JButton("Prepare for forest");
 	    private JButton spinnyModeButton = new JButton("Go to Spinny challenge mode");
 	    private JButton mazeModeButton = new JButton("Do maze");
 	    private Remote remote;
 	    private boolean isSpinnyMode = false;
+	    private boolean prepareForest = true;
     /**
 	 * Constructor.
 	 * @param peli Pointer to the game logic object.
@@ -39,6 +41,8 @@ public class GraphicsInterface extends JPanel implements Runnable {
 	        add(fullSpeed);
 	        add(turnSpeed);
 	        add(staticTurnSpeed);
+	        add(prepareForForestButton);
+	        prepareForForestButton.addActionListener(new PrepareForForestButtonListener());
 	        add(speedButton);
 	        speedButton.addActionListener(new SpeedButtonListener());
 	        add(spinnyModeButton);
@@ -102,6 +106,22 @@ public class GraphicsInterface extends JPanel implements Runnable {
 				remote.sendMsg("mode_maze");
 				isSpinnyMode = true;
 				spinnyModeButton.setText("Go to RC mode");
+			}
+	    }
+	    private class PrepareForForestButtonListener implements ActionListener {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if (prepareForest) {
+					fullSpeed.setText("480");
+					turnSpeed.setText("360");
+					prepareForest = false;
+					prepareForForestButton.setText("Prepare for RC");
+				} else {
+					fullSpeed.setText("720");
+					turnSpeed.setText("90");
+					prepareForest = true;
+					prepareForForestButton.setText("Prepare for forest");
+				}
 			}
 	    }
 
